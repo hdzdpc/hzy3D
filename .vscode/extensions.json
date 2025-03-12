@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "dbaeumer.vscode-eslint",
+        "streetsidesoftware.code-spell-checker",
+        "mhutchie.git-graph",
+        "Gruntfuggly.todo-tree",
+        "seatonjiang.gitmoji-vscode",
+        "qcz.restart-ts-server-button"
+    ]
+}
