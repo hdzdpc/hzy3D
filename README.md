@@ -1,55 +1,31 @@
-# React + TypeScript + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 项目简介
 
-Currently, two official plugins are available:
+</div>
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+该项目目的是基于webgl能够自己实现一个小的游戏引擎。这个引擎能做什么？终极目的是开发一个小游戏。为此目标需要实现哪些功能？
 
-## Expanding the ESLint configuration
+1. 渲染系统：渲染3d模型、光照
+2. 输入系统：用户交互
+3. 蒙皮动画系统：（可选）
+4. 声音
+5. 资源和文件管理系统
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 1. 阶段一：回顾webgl，实现一个渲染引擎
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- [ ]  回顾webgl的用法
+- [ ]  参考threejs实现一个webgl加载模型的渲染引擎
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 2. 阶段二：通过完成一个小游戏，思考分层架构
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- [ ]  制作一个小游戏
+- [ ]  分层架构，抽离出渲染器、脚本框架、逻辑层、输入系统
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
-# hzy3D
+## 3. 阶段三：填充其他系统&优化分层架构
+
+- [ ]  添加输入系统
+- [ ]  添加资源和文件管理系统
+- [ ]  输入系统
+- [ ]  声音
+- [ ]  优化分层架构
