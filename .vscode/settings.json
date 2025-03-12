@@ -1,0 +1,76 @@
+{
+    "gitmoji.onlyUseCustomEmoji": true,
+    "gitmoji.showEmojiCode": true,
+    "gitmoji.addCustomEmoji": [
+      {
+        "emoji": "🎉 init:",
+        "code": "",
+        "description": "初始化工程"
+      },
+      {
+        "emoji": "✨ feat:",
+        "code": "",
+        "description": "新功能"
+      },
+      {
+        "emoji": "🚧 WIP:",
+        "code": "",
+        "description": "Working in progress",
+      },
+      {
+        "emoji": "🐛 fix:",
+        "code": "",
+        "description": "修复bug",
+      },
+      {
+        "emoji": "♻️ refactor:",
+        "code": "",
+        "description": "重构代码",
+      },
+      {
+        "emoji": "🙈 ignore:",
+        "code": "",
+        "description": "修改.gitignore文件",
+      },
+      {
+        "emoji": "🧹 chore:",
+        "code": "",
+        "description": "日常（不改变生产代码）",
+      },
+      {
+        "emoji": "🪵 log:",
+        "code": "",
+        "description": "添加日志",
+      },
+      {
+        "emoji": "🔥 prune:",
+        "code": "",
+        "description": "删除代码、文件、目录",
+      },
+      {
+        "emoji": "🎨 style:",
+        "code": "",
+        "description": "修改样式",
+      },
+      {
+        "emoji": "🛠 config:",
+        "code": "",
+        "description": "修改配置",
+      },
+      {
+        "emoji": "📄 doc:",
+        "code": "",
+        "description": "写注释、文档",
+      },
+      {
+        "emoji": "🔖 release:",
+        "code": "",
+        "description": "发版本",
+      },
+      {
+        "emoji": "🔖 tag:",
+        "code": "",
+        "description": "打tag",
+      }
+    ],
+  }
