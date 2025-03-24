@@ -1,18 +1,20 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { m4, v3 } from 'twgl.js';
 
+// import * as twgl from 'twgl.js';
 export class Object3D {
-  position = vec3.create();
-  rotation = vec3.create();
-  scale = vec3.fromValues(1, 1, 1);
-  matrix = mat4.create();
+  position = v3.create();
+  rotation = v3.create();
+  scale = v3.create(1, 1, 1);
+  matrix = m4.create();
   autoUpdateMatrix = true;
+  children: Object3D[] = [];
 
   updateMatrix() {
-    mat4.identity(this.matrix);
-    mat4.translate(this.matrix, this.matrix, this.position);
-    mat4.rotateX(this.matrix, this.matrix, this.rotation[0]);
-    mat4.rotateY(this.matrix, this.matrix, this.rotation[1]);
-    mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
-    mat4.scale(this.matrix, this.matrix, this.scale);
+    m4.identity(this.matrix);
+    m4.translate(this.matrix, this.matrix, this.position);
+    m4.rotateX(this.matrix, this.rotation[0]);
+    m4.rotateY(this.matrix, this.rotation[1]);
+    m4.rotateZ(this.matrix, this.rotation[2]);
+    m4.scale(this.matrix, this.matrix, this.scale);
   }
 }

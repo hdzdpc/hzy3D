@@ -14,7 +14,8 @@
   "dependencies": {
     "gl-matrix": "^3.4.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "twgl.js": "^5.5.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

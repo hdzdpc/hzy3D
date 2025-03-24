@@ -1,4 +1,6 @@
 import { mat4 } from 'gl-matrix';
+import { fragmentShaderSource, vertexShaderSource } from '../shaders/cube.glsl';
+import { createProgramInfo, createTexture, drawObjectList, m4, primitives, resizeCanvasToDisplaySize } from 'twgl.js';
 
 interface ProgramInfo {
   program: WebGLProgram;
@@ -17,13 +19,28 @@ interface Buffers {
   color: WebGLBuffer | null;
   indices: WebGLBuffer | null;
 }
-
+function rand(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
 export class WebGLRenderer {
   private gl: WebGLRenderingContext;
   private programInfo: ProgramInfo | null = null;
   private buffers: Buffers | null = null;
   private rotation: number = 0.0;
   private then: number = 0;
+
+  lightWorldPosition = [1, 8, -10];
+  lightColor = [1, 1, 1, 1];
+  camera = m4.identity();
+  view = m4.identity();
+  viewProjection = m4.identity();
+
+  tex!: WebGLTexture;
+
+  objects = [];
+  drawObjects = [];
+  numObjects = 100;
+  baseHue = rand(0, 360);
 
   constructor(canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl');
@@ -35,190 +52,82 @@ export class WebGLRenderer {
   }
 
   private init() {
-    const shaderProgram = this.initShaderProgram();
-    if (!shaderProgram) return;
-
-    this.programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-        vertexPosition: this.gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-        vertexColor: this.gl.getAttribLocation(shaderProgram, 'aVertexColor'),
-      },
-      uniformLocations: {
-        projectionMatrix: this.gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-        modelViewMatrix: this.gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-      },
-    };
-
-    this.buffers = this.initBuffers();
-  }
-
-  private initShaderProgram(): WebGLProgram | null {
-    const vertexShader = this.loadShader(this.gl.VERTEX_SHADER, this.vertexShaderSource);
-    const fragmentShader = this.loadShader(this.gl.FRAGMENT_SHADER, this.fragmentShaderSource);
-
-    if (!vertexShader || !fragmentShader) return null;
-
-    const shaderProgram = this.gl.createProgram();
-    if (!shaderProgram) return null;
-
-    this.gl.attachShader(shaderProgram, vertexShader);
-    this.gl.attachShader(shaderProgram, fragmentShader);
-    this.gl.linkProgram(shaderProgram);
-
-    if (!this.gl.getProgramParameter(shaderProgram, this.gl.LINK_STATUS)) {
-      console.error('无法初始化着色器程序: ' + this.gl.getProgramInfoLog(shaderProgram));
-      return null;
-    }
-
-    return shaderProgram;
-  }
-
-  private loadShader(type: number, source: string): WebGLShader | null {
-    const shader = this.gl.createShader(type);
-    if (!shader) return null;
-
-    this.gl.shaderSource(shader, source);
-    this.gl.compileShader(shader);
-
-    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      console.error('编译着色器时发生错误: ' + this.gl.getShaderInfoLog(shader));
-      this.gl.deleteShader(shader);
-      return null;
-    }
-
-    return shader;
-  }
-
-  private initBuffers(): Buffers {
-    const positions = [
-      // Front face
-      -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
-      // Back face
-      -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
-      // Top face
-      -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0,
-      // Bottom face
-      -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
-      // Right face
-      1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0,
-      // Left face
-      -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
+    const programInfo = createProgramInfo(this.gl, [vertexShaderSource, fragmentShaderSource]);
+    const shapes = [
+      primitives.createCubeBufferInfo(this.gl, 2),
+      primitives.createSphereBufferInfo(this.gl, 1, 24, 12),
+      primitives.createPlaneBufferInfo(this.gl, 2, 2),
+      primitives.createTruncatedConeBufferInfo(this.gl, 1, 0, 2, 24, 1),
+      primitives.createCresentBufferInfo(this.gl, 1, 1, 0.5, 0.1, 24),
+      primitives.createCylinderBufferInfo(this.gl, 1, 2, 24, 2),
+      primitives.createDiscBufferInfo(this.gl, 1, 24),
+      primitives.createTorusBufferInfo(this.gl, 1, 0.4, 24, 12),
     ];
+    this.tex = createTexture(this.gl, {
+      min: this.gl.NEAREST,
+      mag: this.gl.NEAREST,
+      src: [255, 255, 255, 255, 192, 192, 192, 255, 192, 192, 192, 255, 255, 255, 255, 255],
+    });
 
-    const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
-
-    const faceColors = [
-      [1.0, 1.0, 1.0, 1.0], // Front face: white
-      [1.0, 0.0, 0.0, 1.0], // Back face: red
-      [0.0, 1.0, 0.0, 1.0], // Top face: green
-      [0.0, 0.0, 1.0, 1.0], // Bottom face: blue
-      [1.0, 1.0, 0.0, 1.0], // Right face: yellow
-      [1.0, 0.0, 1.0, 1.0], // Left face: purple
-    ];
-
-    let colors: number[] = [];
-    for (let j = 0; j < faceColors.length; j++) {
-      const c = faceColors[j];
-      colors = colors.concat(c, c, c, c);
+    for (let ii = 0; ii < this.numObjects; ++ii) {
+      const uniforms = {
+        u_lightWorldPos: this.lightWorldPosition,
+        u_lightColor: this.lightColor,
+        u_diffuseMult: [0.8, 0.48, 0.7726648771266047, 1],
+        u_specular: [1, 1, 1, 1],
+        u_shininess: 50,
+        u_specularFactor: 1,
+        u_diffuse: this.tex,
+        u_viewInverse: this.camera,
+        u_world: m4.identity(),
+        u_worldInverseTranspose: m4.identity(),
+        u_worldViewProjection: m4.identity(),
+      };
+      this.drawObjects.push({
+        programInfo: programInfo,
+        bufferInfo: shapes[ii % shapes.length],
+        uniforms: uniforms,
+      });
+      this.objects.push({
+        translation: [rand(-10, 10), rand(-10, 10), rand(-10, 10)],
+        ySpeed: rand(0.1, 0.3),
+        zSpeed: rand(0.1, 0.3),
+        uniforms: uniforms,
+      });
     }
-
-    const colorBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-
-    const indices = [
-      0,
-      1,
-      2,
-      0,
-      2,
-      3, // Front
-      4,
-      5,
-      6,
-      4,
-      6,
-      7, // Back
-      8,
-      9,
-      10,
-      8,
-      10,
-      11, // Top
-      12,
-      13,
-      14,
-      12,
-      14,
-      15, // Bottom
-      16,
-      17,
-      18,
-      16,
-      18,
-      19, // Right
-      20,
-      21,
-      22,
-      20,
-      22,
-      23, // Left
-    ];
-
-    const indexBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), this.gl.STATIC_DRAW);
-
-    return {
-      position: positionBuffer,
-      color: colorBuffer,
-      indices: indexBuffer,
-    };
   }
 
   private drawScene(deltaTime: number) {
-    if (!this.programInfo || !this.buffers) return;
+    const gl = this.gl;
+    const canvas = gl.canvas as HTMLCanvasElement;
+    const viewProjection = this.viewProjection;
+    resizeCanvasToDisplaySize(this.gl.canvas as HTMLCanvasElement);
 
-    this.rotation += deltaTime;
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    this.gl.clearDepth(1.0);
-    this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.depthFunc(this.gl.LEQUAL);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    const projection = m4.perspective((30 * Math.PI) / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 100);
+    const eye = [1, 4, -20];
+    const target = [0, 0, 0];
+    const up = [0, 1, 0];
+    m4.lookAt(eye, target, up, this.camera);
+    m4.inverse(this.camera, this.view);
+    m4.multiply(projection, this.view, viewProjection);
 
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    const canvas = this.gl.canvas as HTMLCanvasElement;
-    const fieldOfView = (45 * Math.PI) / 180;
-    const aspect = canvas.clientWidth / canvas.clientHeight;
-    const zNear = 0.1;
-    const zFar = 100.0;
-    const projectionMatrix = mat4.create();
+    this.objects.forEach(function (obj) {
+      const uni = obj.uniforms;
+      const world = uni.u_world;
+      m4.identity(world);
+      // m4.rotateY(world, time * obj.ySpeed, world);
+      // m4.rotateZ(world, time * obj.zSpeed, world);
+      m4.translate(world, obj.translation, world);
+      // m4.rotateX(world, time, world);
+      m4.transpose(m4.inverse(world, uni.u_worldInverseTranspose), uni.u_worldInverseTranspose);
+      m4.multiply(viewProjection, uni.u_world, uni.u_worldViewProjection);
+    });
 
-    mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-
-    const modelViewMatrix = mat4.create();
-    mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, this.rotation, [0, 1, 1]);
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.position);
-    this.gl.vertexAttribPointer(this.programInfo.attribLocations.vertexPosition, 3, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.color);
-    this.gl.vertexAttribPointer(this.programInfo.attribLocations.vertexColor, 4, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexColor);
-
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
-
-    this.gl.useProgram(this.programInfo.program);
-
-    this.gl.uniformMatrix4fv(this.programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
-    this.gl.uniformMatrix4fv(this.programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
-
-    this.gl.drawElements(this.gl.TRIANGLES, 36, this.gl.UNSIGNED_SHORT, 0);
+    drawObjectList(gl, this.drawObjects);
   }
 
   public render = (now: number) => {
@@ -228,23 +137,4 @@ export class WebGLRenderer {
 
     this.drawScene(deltaTime);
   };
-
-  private readonly vertexShaderSource = `
-    attribute vec4 aVertexPosition;
-    attribute vec4 aVertexColor;
-    uniform mat4 uModelViewMatrix;
-    uniform mat4 uProjectionMatrix;
-    varying lowp vec4 vColor;
-    void main() {
-      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-      vColor = aVertexColor;
-    }
-  `;
-
-  private readonly fragmentShaderSource = `
-    varying lowp vec4 vColor;
-    void main() {
-      gl_FragColor = vColor;
-    }
-  `;
 }
