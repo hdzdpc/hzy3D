@@ -1,6 +1,7 @@
-import { mat4 } from 'gl-matrix';
+import { Geometry } from '../../core/geometry';
+import { Mesh } from '../../objects/mesh';
 import { fragmentShaderSource, vertexShaderSource } from '../shaders/cube.glsl';
-import { createProgramInfo, createTexture, drawObjectList, m4, primitives, resizeCanvasToDisplaySize } from 'twgl.js';
+import { createProgramInfo, createTexture, drawObjectList, m4, primitives, resizeCanvasToDisplaySize, setDefaults } from 'twgl.js';
 
 interface ProgramInfo {
   program: WebGLProgram;
@@ -38,7 +39,7 @@ export class WebGLRenderer {
   tex!: WebGLTexture;
 
   objects = [];
-  drawObjects = [];
+  drawObjects: Mesh[] = [];
   numObjects = 100;
   baseHue = rand(0, 360);
 
@@ -52,6 +53,7 @@ export class WebGLRenderer {
   }
 
   private init() {
+    setDefaults({ attribPrefix: 'a_' });
     const programInfo = createProgramInfo(this.gl, [vertexShaderSource, fragmentShaderSource]);
     const shapes = [
       primitives.createCubeBufferInfo(this.gl, 2),
@@ -83,11 +85,15 @@ export class WebGLRenderer {
         u_worldInverseTranspose: m4.identity(),
         u_worldViewProjection: m4.identity(),
       };
-      this.drawObjects.push({
-        programInfo: programInfo,
-        bufferInfo: shapes[ii % shapes.length],
-        uniforms: uniforms,
-      });
+      this.drawObjects.push(
+        new Mesh(
+          new Geometry({
+            programInfo: programInfo,
+            bufferInfo: shapes[ii % shapes.length],
+            uniforms: uniforms,
+          }),
+        ),
+      );
       this.objects.push({
         translation: [rand(-10, 10), rand(-10, 10), rand(-10, 10)],
         ySpeed: rand(0.1, 0.3),
@@ -97,7 +103,7 @@ export class WebGLRenderer {
     }
   }
 
-  private drawScene(deltaTime: number) {
+  private drawScene(time: number, deltaTime: number) {
     const gl = this.gl;
     const canvas = gl.canvas as HTMLCanvasElement;
     const viewProjection = this.viewProjection;
@@ -119,15 +125,18 @@ export class WebGLRenderer {
       const uni = obj.uniforms;
       const world = uni.u_world;
       m4.identity(world);
-      // m4.rotateY(world, time * obj.ySpeed, world);
-      // m4.rotateZ(world, time * obj.zSpeed, world);
+      m4.rotateY(world, time * obj.ySpeed, world);
+      m4.rotateZ(world, time * obj.zSpeed, world);
       m4.translate(world, obj.translation, world);
-      // m4.rotateX(world, time, world);
+      m4.rotateX(world, time, world);
       m4.transpose(m4.inverse(world, uni.u_worldInverseTranspose), uni.u_worldInverseTranspose);
       m4.multiply(viewProjection, uni.u_world, uni.u_worldViewProjection);
     });
 
-    drawObjectList(gl, this.drawObjects);
+    drawObjectList(
+      gl,
+      this.drawObjects.map(obj => obj.geometry.drawInfo),
+    );
   }
 
   public render = (now: number) => {
@@ -135,6 +144,6 @@ export class WebGLRenderer {
     const deltaTime = now - this.then;
     this.then = now;
 
-    this.drawScene(deltaTime);
+    this.drawScene(now, deltaTime);
   };
 }

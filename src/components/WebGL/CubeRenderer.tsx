@@ -16,12 +16,10 @@ const CubeRenderer: React.FC<CubeRendererProps> = ({ width = 800, height = 600 }
 
     try {
       rendererRef.current = new WebGLRenderer(canvas);
-      
       const render = (now: number) => {
         rendererRef.current?.render(now);
         animationFrameRef.current = requestAnimationFrame(render);
       };
-
       requestAnimationFrame(render);
     } catch (error) {
       console.error('WebGL初始化失败:', error);
@@ -34,14 +32,7 @@ const CubeRenderer: React.FC<CubeRendererProps> = ({ width = 800, height = 600 }
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      style={{ border: '1px solid black' }}
-    />
-  );
+  return <canvas ref={canvasRef} width={width} height={height} style={{ border: '1px solid black' }} />;
 };
 
 export default CubeRenderer;

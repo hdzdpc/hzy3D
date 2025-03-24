@@ -8,7 +8,6 @@ export class Object3D {
   matrix = m4.create();
   autoUpdateMatrix = true;
   children: Object3D[] = [];
-
   updateMatrix() {
     m4.identity(this.matrix);
     m4.translate(this.matrix, this.matrix, this.position);
