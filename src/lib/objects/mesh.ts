@@ -1,4 +1,4 @@
-import { Object3D } from './object-3d';
+import { GameObject } from './game-object';
 import { Geometry } from '../core/geometry';
 import { Material } from '../materials/material';
 
@@ -6,7 +6,7 @@ import { Material } from '../materials/material';
  * mesh
  * 包含渲染信息
  */
-export class Mesh extends Object3D {
+export class Mesh extends GameObject {
   geometry: Geometry;
   material: Material;
   //   drawInfo: DrawInfo;

@@ -1,9 +1,9 @@
-import { Object3D } from '../objects/object-3d';
+import { GameObject } from '../objects/game-object';
 
 export class Scene {
-  objects: Object3D[] = [];
+  objects: GameObject[] = [];
 
-  add(obj: Object3D) {
+  add(obj: GameObject) {
     this.objects.push(obj);
   }
 }

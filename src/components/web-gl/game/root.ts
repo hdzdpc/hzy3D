@@ -5,9 +5,12 @@ import { Geometry } from '../../../lib/core/geometry';
 import { Material } from '../../../lib/materials/material';
 import { vertexShaderSource, fragmentShaderSource } from '../../../lib/renderers/shaders/cube.glsl';
 import { MyObject } from './my-object';
+import { World } from '../../../lib/game/world';
 let then = 0;
 let camera: Camera;
+let world: World;
 export function gameLogic(canvas: HTMLCanvasElement) {
+  world = new World();
   const renderer = new WebGLRenderer(canvas);
   camera = createCamera(canvas);
 
@@ -27,11 +30,13 @@ export function gameLogic(canvas: HTMLCanvasElement) {
 }
 
 function createCamera(canvas: HTMLCanvasElement) {
-  const eye = [1, 4, -20];
-  const target = [0, 0, 0];
-  const up = [0, 1, 0];
-  const projection = m4.perspective((30 * Math.PI) / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 100);
-  const camera = new Camera(eye, target, up, projection);
+  const cameraObj = world.createObject();
+  const camera = cameraObj.addComponent<Camera>(Camera);
+  camera.eye = [1, 4, -20];
+  camera.target = [0, 0, 0];
+  camera.up = [0, 1, 0];
+  camera.projection = m4.perspective((30 * Math.PI) / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 100);
+
   return camera;
 }
 
@@ -61,7 +66,7 @@ function buildScene(gl: WebGLRenderingContext) {
     mag: gl.NEAREST,
     src: [255, 255, 255, 255, 192, 192, 192, 255, 192, 192, 192, 255, 255, 255, 255, 255],
   });
-  const numObjects = 1;
+  const numObjects = 100;
   const lightWorldPosition = [1, 8, -10];
   const lightColor = [1, 1, 1, 1];
   for (let ii = 0; ii < numObjects; ++ii) {
@@ -79,10 +84,10 @@ function buildScene(gl: WebGLRenderingContext) {
       u_worldViewProjection: m4.identity(),
     };
     const obj = new MyObject(new Geometry(shapes[ii % shapes.length]), new Material(programInfo, uniforms));
-    drawObjects.push(obj);
     obj.position = [rand(-10, 10), rand(-10, 10), rand(-10, 10)];
     obj.ySpeed = rand(0.1, 0.3);
     obj.zSpeed = rand(0.1, 0.3);
+    drawObjects.push(obj);
   }
   return drawObjects;
 }
