@@ -1,28 +1,27 @@
 import { createProgramInfo, createTexture, m4, primitives } from 'twgl.js';
-import { WebGLRenderer } from '../../../lib/renderers/webgl/webgl-renderer';
 import { Camera } from '../../../lib/cameras/camera';
 import { Geometry } from '../../../lib/core/geometry';
 import { Material } from '../../../lib/materials/material';
 import { vertexShaderSource, fragmentShaderSource } from '../../../lib/renderers/shaders/cube.glsl';
-import { MyObject } from './my-object';
+import { MyScript } from './my-script';
 import { World } from '../../../lib/game/world';
+import { Mesh } from '../../../lib/objects/mesh';
 let then = 0;
 let camera: Camera;
 let world: World;
 export function gameLogic(canvas: HTMLCanvasElement) {
-  world = new World();
-  const renderer = new WebGLRenderer(canvas);
+  world = new World(canvas);
   camera = createCamera(canvas);
+  world.addCamera(camera);
 
-  const scene = buildScene(renderer.gl);
+  buildScene(world.renderer.gl);
 
   const loop = (now: number) => {
     now *= 0.001;
     const deltaTime = now - then;
     then = now;
-    onUpdate(scene, deltaTime, now);
+    world.tick(deltaTime);
 
-    renderer.render(camera, scene);
     requestAnimationFrame(loop);
   };
 
@@ -40,16 +39,8 @@ function createCamera(canvas: HTMLCanvasElement) {
   return camera;
 }
 
-function onUpdate(drawObjects: MyObject[], deltaTime: number, time: number) {
-  drawObjects.forEach(obj => {
-    obj.rotation[0] = time;
-    obj.rotation[1] = time * obj.ySpeed;
-    obj.rotation[2] = time * obj.zSpeed;
-  });
-}
-
 function buildScene(gl: WebGLRenderingContext) {
-  const drawObjects: MyObject[] = [];
+  const drawObjects: MyScript[] = [];
   const programInfo = createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource]);
   const shapes = [
     primitives.createCubeBufferInfo(gl, 2),
@@ -83,11 +74,16 @@ function buildScene(gl: WebGLRenderingContext) {
       u_worldInverseTranspose: m4.identity(),
       u_worldViewProjection: m4.identity(),
     };
-    const obj = new MyObject(new Geometry(shapes[ii % shapes.length]), new Material(programInfo, uniforms));
+    const obj = world.createObject();
     obj.position = [rand(-10, 10), rand(-10, 10), rand(-10, 10)];
-    obj.ySpeed = rand(0.1, 0.3);
-    obj.zSpeed = rand(0.1, 0.3);
-    drawObjects.push(obj);
+
+    const ms = obj.addComponent(MyScript);
+    ms.ySpeed = rand(0.1, 0.3);
+    ms.zSpeed = rand(0.1, 0.3);
+
+    const mesh = obj.addComponent<Mesh>(Mesh);
+    mesh.geometry = new Geometry(shapes[ii % shapes.length]);
+    mesh.material = new Material(programInfo, uniforms);
   }
   return drawObjects;
 }

@@ -35,11 +35,11 @@ export class WebGLRenderer {
     camera.updateMatrix();
 
     const viewProjection = camera.viewProjection;
-    drawObjects.forEach(obj => {
-      obj.updateMatrix();
-      const uni = obj.material.uniforms;
-      const world = obj.matrix;
-      obj.material.uniforms.u_world = world;
+    drawObjects.forEach(mesh => {
+      mesh.object.updateMatrix();
+      const uni = mesh.material.uniforms;
+      const world = mesh.object.matrix;
+      mesh.material.uniforms.u_world = world;
       m4.transpose(m4.inverse(world, uni.u_worldInverseTranspose), uni.u_worldInverseTranspose);
       m4.multiply(viewProjection, uni.u_world, uni.u_worldViewProjection);
     });

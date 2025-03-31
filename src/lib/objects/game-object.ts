@@ -2,7 +2,8 @@ import { m4, v3 } from 'twgl.js';
 import { World } from '../game/world';
 import { Component } from '../game/component';
 
-declare type Constructor<T = unknown> = new (...args: unknown[]) => T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare type Constructor<T = unknown> = new (...args: any[]) => T;
 export class GameObject {
   uuid: number;
   world: World;
@@ -35,6 +36,17 @@ export class GameObject {
     this.components.push(comp);
     return comp;
   }
+
+  getComponent<T extends Component>(component: Constructor<T>) {
+    for (let i = 0; i < this.components.length; i++) {
+      const comp = this.components[i];
+      if (comp instanceof component) {
+        return comp;
+      }
+    }
+    return null;
+  }
+
   updateMatrix() {
     m4.identity(this.matrix);
     m4.translate(this.matrix, this.position, this.matrix);
